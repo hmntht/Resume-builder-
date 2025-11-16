@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Redesigner</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load React, ReactDOM, and Babel (required to run JSX in the browser) -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <style>
+        /* Define the font family */
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom print styling to ensure the resume looks good when saved as PDF */
+        @media print {
+            .printable { 
+                max-width: 210mm; 
+                margin: 0; 
+                padding: 0; 
+                box-shadow: none; 
+            }
+            body { 
+                -webkit-print-color-adjust: exact !important; 
+                print-color-adjust: exact !important; 
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- This is the root element where the React app will be rendered -->
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // Start of React/JSX Code
+        
+        const { useState, useEffect, useCallback, useMemo } = React;
+        // Lucide-react icons are simulated here with inline SVG placeholders
+        
+        // Icon Components (Simplified SVGs for compatibility)
+        const RefreshCcw = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-7.44 3.42"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 7.44-3.42"/><path d="M17.65 6.35L21 3M3 21l3.35-3.35"/></svg>;
+        const Send = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m22 2-7 20-4-9-9-4Z"/><path d="M22 2 11 13"/></svg>;
+        const Download = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>;
+        const Loader2 = ({ className }) => <svg className={`${className} animate-spin`} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>;
+        const Edit = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"/></svg>;
+        const Printer = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect width="12" height="8" x="6" y="14"/></svg>;
+        const CheckCircle = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>;
+        const Smartphone = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg>;
+        const Mail = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>;
+        const Globe = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 0 4 10 15.3 15.3 0 0 0-4 10 15.3 15.3 0 0 0-4-10 15.3 15.3 0 0 0 4-10zM2.05 9h19.9"/></svg>;
+        const Briefcase = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>;
+        const GraduationCap = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6m-2-4v6m-2-4v6M5 17l5-3 5 3"/><path d="M12 3a7 7 0 0 0-7 7v6a7 7 0 0 0 7 7 7 7 0 0 0 7-7v-6a7 7 0 0 0-7-7z"/></svg>;
+        const Zap = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>;
+        const UploadCloud = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242M12 12v9"/><path d="m16 16-4-4-4 4"/></svg>;
+        const FileText = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>;
+        const ImageIcon = ({ className }) => <svg className={className} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>;
+
+
+        // --- CONFIGURATION AND CONSTANTS ---
+
+        // gemini-2.5-flash-preview-09-2025 supports multimodal input (text and image)
+        const MODEL_NAME = 'gemini-2.5-flash-preview-09-2025'; 
+        const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent`;
+        const apiKey = ""; // API key is handled by the environment
+
+        // Define the structured JSON schema for the AI output
+        const RESUME_SCHEMA = {
+            type: "OBJECT",
+            properties: {
+                parsedData: {
+                    type: "OBJECT",
+                    properties: {
+                        name: { "type": "STRING", "description": "Full name of the applicant." },
+                        title: { "type": "STRING", "description": "Current or desired professional title." },
+                        contact: {
+                            type: "OBJECT",
+                            properties: {
+                                phone: { "type": "STRING" },
+                                email: { "type": "STRING" },
+                                linkedin: { "type": "STRING", "description": "LinkedIn profile URL or handle." }
+                            }
+                        },
+                        summary: { "type": "STRING", "description": "A concise, 3-4 sentence professional summary." },
+                        experience: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    title: { "type": "STRING" },
+                                    company: { "type": "STRING" },
+                                    dates: { "type": "STRING", "description": "e.g., 'Jan 2020 - Dec 2023' or '2020 - Present'" },
+                                    description: { "type": "STRING", "description": "A 2-3 line summary of key achievement or responsibility." }
+                                }
+                            }
+                        },
+                        education: {
+                            type: "ARRAY",
+                            items: {
+                                type: "OBJECT",
+                                properties: {
+                                    degree: { "type": "STRING" },
+                                    institution: { "type": "STRING" },
+                                    dates: { "type": "STRING", "description": "e.g., '2015 - 2019'" }
+                                }
+                            }
+                        },
+                        skills: { "type": "ARRAY", items: { "type": "STRING" }, "description": "List of 5-10 core technical and soft skills." }
+                    },
+                    propertyOrdering: ["name", "title", "contact", "summary", "experience", "education", "skills"]
+                },
+                templates: {
+                    type: "ARRAY",
+                    items: {
+                        type: "OBJECT",
+                        properties: {
+                            id: { "type": "STRING", "description": "A unique identifier: 'classic', 'modern', or 'tech'." },
+                            name: { "type": "STRING", "description": "A catchy name for the template, e.g., 'The Clarity Standard'." },
+                            description: { "type": "STRING", "description": "A brief, one-sentence description of who the template is best for (e.g., 'Best for finance and legal professionals.')." }
+                        }
+                    }
+                }
+            },
+            propertyOrdering: ["parsedData", "templates"]
+        };
+
+        // --- DATA STRUCTURES ---
+
+        const TEMPLATE_DESIGNS = {
+            classic: 'The Clarity Standard',
+            modern: 'Modern Professional',
+            tech: 'Tech Streamlined',
+        };
+
+        // Default empty data structure (used for initial load)
+        const DEFAULT_RESUME_DATA = {
+            name: 'Jane Doe',
+            title: 'Senior Product Manager',
+            contact: { phone: '123-456-7890', email: 'jane.doe@example.com', linkedin: 'linkedin.com/in/janedoe' },
+            summary: 'A highly motivated and results-oriented professional with 8+ years of experience in product development, agile methodologies, and cross-functional team leadership. Proven ability to drive product strategy from concept to launch.',
+            experience: [
+                { title: 'Product Manager', company: 'Innovate Solutions', dates: 'Jan 2020 - Present', description: 'Led the development of a flagship SaaS platform, resulting in a 40% increase in user retention. Managed a team of 5 engineers and 2 designers.' }
+            ],
+            education: [
+                { degree: 'MBA in Business Administration', institution: 'State University', dates: '2014 - 2016' }
+            ],
+            skills: ['Agile/Scrum', 'Product Strategy', 'Figma', 'SQL', 'Market Analysis', 'Team Leadership']
+        };
+
+
+        // --- RESUME TEMPLATES (COMPONENTS) ---
+
+        const SectionHeader = ({ icon: Icon, title, isDark = false }) => (
+            <div className={`flex items-center space-x-2 pb-1 mb-2 ${isDark ? 'border-b-2 border-white/50 text-white' : 'border-b-2 border-slate-300 text-slate-700'}`}>
+                <Icon className="w-5 h-5" />
+                <h2 className="text-xl font-bold tracking-wider uppercase">{title}</h2>
+            </div>
+        );
+
+        // Template 1: Classic (Single Column, Serif-inspired)
+        const ClassicTemplate = ({ data }) => (
+            <div className="resume p-6 max-w-4xl mx-auto shadow-2xl bg-white font-serif text-slate-800 printable" style={{ minHeight: '297mm' }}>
+                <header className="text-center mb-6">
+                    <h1 className="text-4xl font-extrabold text-slate-900 mb-1">{data.name}</h1>
+                    <h2 className="text-xl font-medium text-slate-600 mb-3">{data.title}</h2>
+                    <div className="flex justify-center flex-wrap gap-x-4 gap-y-1 text-sm text-slate-600">
+                        <span><Smartphone className="inline w-3 h-3 mr-1" />{data.contact.phone}</span>
+                        <span><Mail className="inline w-3 h-3 mr-1" />{data.contact.email}</span>
+                        <span><Globe className="inline w-3 h-3 mr-1" />{data.contact.linkedin}</span>
+                    </div>
+                </header>
+
+                <section className="mb-6">
+                    <SectionHeader icon={Zap} title="Professional Summary" />
+                    <p className="text-sm leading-relaxed italic">{data.summary}</p>
+                </section>
+
+                <section className="mb-6">
+                    <SectionHeader icon={Briefcase} title="Experience" />
+                    {data.experience.map((job, index) => (
+                        <div key={index} className="mb-3 pl-1">
+                            <div className="flex justify-between items-baseline">
+                                <h3 className="text-md font-bold">{job.title}</h3>
+                                <span className="text-sm font-medium text-slate-500">{job.dates}</span>
+                            </div>
+                            <p className="text-sm italic text-slate-600 mb-1">{job.company}</p>
+                            <p className="text-sm">{job.description}</p>
+                        </div>
+                    ))}
+                </section>
+
+                <div className="flex space-x-6">
+                    <section className="w-2/3">
+                        <SectionHeader icon={GraduationCap} title="Education" />
+                        {data.education.map((edu, index) => (
+                            <div key={index} className="mb-3 pl-1">
+                                <div className="flex justify-between items-baseline">
+                                    <h3 className="text-md font-bold">{edu.degree}</h3>
+                                    <span className="text-sm font-medium text-slate-500">{edu.dates}</span>
+                                </div>
+                                <p className="text-sm italic text-slate-600">{edu.institution}</p>
+                            </div>
+                        ))}
+                    </section>
+                    <section className="w-1/3">
+                        <SectionHeader icon={CheckCircle} title="Skills" />
+                        <ul className="text-sm space-y-1 list-disc list-inside">
+                            {data.skills.map((skill, index) => (
+                                <li key={index} className="ml-2">{skill}</li>
+                            ))}
+                        </ul>
+                    </section>
+                </div>
+            </div>
+        );
+
+        // Template 2: Modern (Two Column, Sans-Serif, Highlighted Sidebar)
+        const ModernTemplate = ({ data }) => (
+            <div className="resume p-0 max-w-4xl mx-auto shadow-2xl bg-white font-sans text-slate-800 flex printable" style={{ minHeight: '297mm' }}>
+                {/* Sidebar */}
+                <div className="w-1/3 p-6 bg-slate-800 text-white rounded-l-lg space-y-6">
+                    <header className="text-center pb-4 border-b border-white/30">
+                        <h1 className="text-3xl font-extrabold mb-1">{data.name.toUpperCase()}</h1>
+                        <p className="text-lg font-light text-cyan-300">{data.title}</p>
+                    </header>
+
+                    <section>
+                        <SectionHeader icon={Smartphone} title="Contact" isDark={true} />
+                        <ul className="text-sm space-y-2 font-light">
+                            <li className="flex items-center space-x-2"><Mail className="w-4 h-4 text-cyan-300" /><span>{data.contact.email}</span></li>
+                            <li className="flex items-center space-x-2"><Smartphone className="w-4 h-4 text-cyan-300" /><span>{data.contact.phone}</span></li>
+                            <li className="flex items-center space-x-2"><Globe className="w-4 h-4 text-cyan-300" /><span>{data.contact.linkedin}</span></li>
+                        </ul>
+                    </section>
+
+                    <section>
+                        <SectionHeader icon={CheckCircle} title="Skills" isDark={true} />
+                        <ul className="text-sm space-y-1 font-light">
+                            {data.skills.map((skill, index) => (
+                                <li key={index} className="text-gray-300">▹ {skill}</li>
+                            ))}
+                        </ul>
+                    </section>
+
+                    <section>
+                        <SectionHeader icon={GraduationCap} title="Education" isDark={true} />
+                        {data.education.map((edu, index) => (
+                            <div key={index} className="mb-3">
+                                <p className="font-semibold text-base text-cyan-300">{edu.degree}</p>
+                                <p className="text-sm text-white/80">{edu.institution}</p>
+                                <p className="text-xs text-white/50">{edu.dates}</p>
+                            </div>
+                        ))}
+                    </section>
+                </div>
+
+                {/* Main Content */}
+                <div className="w-2/3 p-6 space-y-6">
+                    <section>
+                        <SectionHeader icon={Zap} title="Summary" />
+                        <p className="text-base text-gray-700">{data.summary}</p>
+                    </section>
+
+                    <section>
+                        <h2 className="text-xl font-bold mb-3 uppercase border-b border-slate-300 text-slate-700 flex items-center"><Briefcase className="w-5 h-5 mr-2" />Professional Experience</h2>
+                        {data.experience.map((job, index) => (
+                            <div key={index} className="mb-4">
+                                <div className="flex justify-between items-start">
+                                    <h3 className="text-lg font-bold text-slate-900">{job.title} <span className="text-base font-semibold text-cyan-600">| {job.company}</span></h3>
+                                    <span className="text-sm font-medium text-slate-500">{job.dates}</span>
+                                </div>
+                                <p className="text-sm mt-1 leading-relaxed">{job.description}</p>
+                            </div>
+                        ))}
+                    </section>
+                </div>
+            </div>
+    
