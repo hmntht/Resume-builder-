@@ -3,7 +3,7 @@
 // gemini-2.5-flash-preview-09-2025 supports multimodal input (text and image)
 const MODEL_NAME = 'gemini-2.5-flash-preview-09-2025'; 
 const API_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent`;
-const apiKey = "AIzaSyDdOkFYez625UjfgfOSefxA4JGdmLg_PXQ"; // API key is handled by the environment
+const apiKey = ""; // API key is handled by the environment
 
 // Define the structured JSON schema for the AI output
 const RESUME_SCHEMA = {
